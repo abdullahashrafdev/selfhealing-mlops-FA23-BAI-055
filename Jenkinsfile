@@ -7,6 +7,7 @@ pipeline {
         STABLE_IMAGE   = "${DOCKERHUB_USER}/sentiment-api:stable"
         APP_PORT       = "5000"
         CONTAINER_NAME = "sentiment-app-test"
+        SELENIUM_CONTAINER = "selenium-chrome"
     }
 
     stages {
@@ -22,7 +23,7 @@ pipeline {
                 sh '''
                     docker build -t ${UNSTABLE_IMAGE} .
                     docker rm -f ${CONTAINER_NAME} || true
-                    docker run -d --name ${CONTAINER_NAME} -p ${APP_PORT}:5000 ${UNSTABLE_IMAGE}
+                    docker run -d --name ${CONTAINER_NAME} -p 5000:5000 ${UNSTABLE_IMAGE}
                     sleep 15
                 '''
             }
@@ -33,7 +34,7 @@ pipeline {
                 sh '''
                     docker run --rm \
                         --network host \
-                        -e BASE_URL=http://localhost:${APP_PORT} \
+                        -e BASE_URL=http://localhost:5000 \
                         -v ${WORKSPACE}/tests:/tests \
                         ${UNSTABLE_IMAGE} \
                         bash -c "pip install pytest requests --quiet && pytest /tests/test_api.py -v"
@@ -44,13 +45,21 @@ pipeline {
         stage('UI Test') {
             steps {
                 sh '''
+                    docker rm -f ${SELENIUM_CONTAINER} || true
+                    docker run -d --name ${SELENIUM_CONTAINER} --network host \
+                        --shm-size=2g \
+                        selenium/standalone-chrome:latest
+                    sleep 10
+
                     docker run --rm \
                         --network host \
                         -e BASE_URL=http://localhost:5000 \
                         -e SELENIUM_URL=http://localhost:4444/wd/hub \
                         -v ${WORKSPACE}/tests:/tests \
-                        selenium/standalone-chrome:latest \
+                        ${UNSTABLE_IMAGE} \
                         bash -c "pip install pytest selenium --quiet && pytest /tests/test_ui.py -v"
+
+                    docker rm -f ${SELENIUM_CONTAINER} || true
                 '''
             }
         }
@@ -92,7 +101,10 @@ pipeline {
 
     post {
         always {
-            sh 'docker rm -f ${CONTAINER_NAME} || true'
+            sh '''
+                docker rm -f ${CONTAINER_NAME} || true
+                docker rm -f ${SELENIUM_CONTAINER} || true
+            '''
         }
         success {
             echo 'Pipeline completed successfully.'
