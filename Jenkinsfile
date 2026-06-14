@@ -45,21 +45,10 @@ pipeline {
         stage('UI Test') {
             steps {
                 sh '''
-                    docker rm -f ${SELENIUM_CONTAINER} || true
-                    docker run -d --name ${SELENIUM_CONTAINER} --network host \
-                        --shm-size=2g \
-                        selenium/standalone-chrome:latest
-                    sleep 10
-
-                    docker run --rm \
-                        --network host \
-                        -e BASE_URL=http://localhost:5000 \
-                        -e SELENIUM_URL=http://localhost:4444/wd/hub \
-                        -v ${WORKSPACE}/tests:/tests \
-                        ${UNSTABLE_IMAGE} \
-                        bash -c "pip install pytest selenium --quiet && pytest /tests/test_ui.py -v"
-
-                    docker rm -f ${SELENIUM_CONTAINER} || true
+                    docker rm -f selenium-chrome || true
+                    docker run -d --name selenium-chrome -p 4444:4444 --shm-size=2g selenium/standalone-chrome:latest
+                    sleep 15
+                    docker run --rm --network host -e BASE_URL=http://172.17.0.1:5000 -e SELENIUM_URL=http://localhost:4444/wd/hub -v ${WORKSPACE}/tests:/tests ${UNSTABLE_IMAGE} bash -c "pip install pytest selenium --quiet && pytest /tests/test_ui.py -v"
                 '''
             }
         }
