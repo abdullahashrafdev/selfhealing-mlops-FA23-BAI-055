@@ -10,9 +10,9 @@ route:
 receivers:
   - name: "jenkins-rollback-webhook"
     webhook_configs:
-      - url: "http://localhost:8080/generic-webhook-trigger/invoke?token=ROLLBACK_26B6B8_TOKEN"
+      - url: "http://13.53.197.43:8080/generic-webhook-trigger/invoke?token=ROLLBACK_26B6B8_TOKEN"
         http_config:
           basic_auth:
             username: "admin"
-            password: "YOUR_JENKINS_API_TOKEN"
+            password: "1155fe0641285071581d2b81a436096773"
         send_resolved: false
