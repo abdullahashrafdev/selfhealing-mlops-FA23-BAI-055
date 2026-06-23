@@ -2,17 +2,14 @@ global:
   resolve_timeout: 5m
 
 route:
-  receiver: "jenkins-rollback-webhook"
+  group_by: ['alertname']
   group_wait: 10s
   group_interval: 1m
-  repeat_interval: 10m
+  repeat_interval: 1h
+  receiver: 'jenkins-rollback-webhook'
 
 receivers:
-  - name: "jenkins-rollback-webhook"
-    webhook_configs:
-      - url: "http://16.170.222.228:8080/generic-webhook-trigger/invoke?token=ROLLBACK_26B6B8_TOKEN"
-        http_config:
-          basic_auth:
-            username: "admin"
-            password: "1155fe0641285071581d2b81a436096773"
-        send_resolved: false
+- name: 'jenkins-rollback-webhook'
+  webhook_configs:
+  - url: 'http://16.170.222.228:8080/generic-webhook-trigger/invoke?token=ROLLBACK_26B6B8_TOKEN'
+    send_resolved: true
